@@ -1,5 +1,5 @@
-use iced::widget::{button, column, text};
-use iced::Element;
+use iced::widget::{button, column, container,  text};
+use iced::{Element, Fill};
 
 // Define the message enum to represent possible user actions
 #[derive(Debug, Clone)]
@@ -26,12 +26,13 @@ fn update(counter: &mut Counter, message: Message) {
         // If the Increment message is received, increase the counter's value by 1
         Message::Increment => counter.value += 1,
         // Decrease the counter's value by 1 when the Decrement message is received
-        Message::Decrement => counter.value -= 1,
+        Message::Decrement => is_zero(counter),
     }
 }
 
 // The view function defines the UI layout and appearance
 fn view(counter: &Counter) -> Element<Message> {
+    container(
     column![
         // Display the current value of the counter as text with font size 20
         text(counter.value).size(20),
@@ -40,6 +41,19 @@ fn view(counter: &Counter) -> Element<Message> {
         // Create a "Decrement" button that sends the Decrement message when pressed
         button("Decrement").on_press(Message::Decrement),
     ]
-    .spacing(10) // Add spacing between the elements in the column
-    .into()      // Convert the column into an Element<Message>
+    .spacing(10)
+    )
+    .padding(10)
+    .center_x(Fill)
+    .center_y(Fill)
+    .into()
+}
+
+//A function to handle backtrace when the Counter hits zero
+fn is_zero(counter: &mut Counter){
+    if counter.value == 0 {
+        println!("Counter has reached zero!");
+    } else {
+        counter.value -= 1;
+    }
 }
