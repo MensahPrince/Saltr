@@ -1,3 +1,5 @@
+mod genr;
+
 use iced::widget::{button, row, column, container, text, svg, Space};
 use iced::{Element, Fill, Size, Border, Shadow, Vector};
 use iced::{Color, Background, Theme};
@@ -9,10 +11,9 @@ enum Message {
     Reload,
 }
 
-// Define the Counter struct to hold the state of the counter
+// Define the PasswordGenerator struct to hold the state of the password generator
 #[derive(Default)]
-struct Counter {
-    value: u64, // The current value of the counter
+struct PasswordGenerator {
     generated_password: String,
 }
 
@@ -22,17 +23,19 @@ pub fn main() -> iced::Result {
     iced::application("Saltr", update, view)
         .window_size(Size::new(380.0, 640.0)) // Phone-like aspect ratio
         .resizable(false) // Fixed size for clean design
-        .theme(|_: &Counter| Theme::Dark) // Use dark theme
+        .theme(|_: &PasswordGenerator| Theme::Dark) // Use dark theme
         .run()
 }
 
 // The update function handles messages and updates the state accordingly
-fn update(counter: &mut Counter, message: Message) {
+fn update(password_generator: &mut PasswordGenerator, message: Message) {
     match message {
         Message::Copy => {
+            genr::generate_password(&mut password_generator.generated_password, 16);
             println!("Copy button has been clicked");
         }
         Message::Reload => {
+            genr::generate_password(&mut password_generator.generated_password, 16);
             println!("Reload button has been clicked");
         }
     }
@@ -47,7 +50,8 @@ const TEXT_SECONDARY: Color = Color::from_rgb(0.7, 0.7, 0.7);
 const BUTTON_ACTIVE: Color = Color::from_rgb(0.2, 0.2, 0.2);
 
 // The view function defines the UI layout and appearance
-fn view(counter: &Counter) -> Element<Message> {
+fn view(password_generator: &PasswordGenerator) -> Element<Message> {
+    
     let reload_svg = svg::Handle::from_path("assets/reload.svg"); 
     let copy_svg = svg::Handle::from_path("assets/copy.svg");
     
@@ -146,10 +150,10 @@ fn view(counter: &Counter) -> Element<Message> {
                 reload_btn,
                 Space::with_width(15),
                 container(
-                    text(if counter.generated_password.is_empty() { 
-                        "Password:" 
+                    text(if password_generator.generated_password.is_empty() { 
+                        "Click to generate password" 
                     } else { 
-                        &counter.generated_password 
+                        &password_generator.generated_password 
                     })
                     .size(18)
                     .style(move |_theme: &Theme| {
