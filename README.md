@@ -31,6 +31,7 @@ Dependencies:
    
    ```toml
    iced = { version = "0.13.1", features = ["svg"] }
+   rand = "0.9.1"
    ```
 
 ## Disclaimer:
