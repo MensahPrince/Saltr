@@ -1,9 +1,17 @@
 mod genr;
 
-use iced::widget::{button, row, column, container, text, svg, Space};
-use iced::{Element, Fill, Size, Border, Shadow, Vector};
-use iced::{Color, Background, Theme};
-use arboard::Clipboard;
+use iced::widget::{button, row, column, container, text, svg, Space, text_input};
+use iced::{Element, Fill, Size};
+
+// Define the pages enum
+#[derive(Debug, Clone, Default)]
+enum Pages {
+    #[default]
+    Current,
+    AddDetails,
+    ViewPasswords,
+    Settings,
+}
 
 // Define the message enum to represent possible user actions
 #[derive(Debug, Clone)]
@@ -11,12 +19,27 @@ enum Message {
     Copy,
     Reload,
     Save,
+    NavigateTo(Pages), // Add navigation message
+    // Form input messages
+    PasswordNameChanged(String),
+    PasswordChanged(String),
+    WebsiteChanged(String),
+    UsernameChanged(String),
+    NotesChanged(String),
+    SavePasswordDetails,
 }
 
 // Define the PasswordGenerator struct to hold the state of the password generator
 #[derive(Default)]
 struct PasswordGenerator {
+    current_page: Pages, // Add current page state
     generated_password: String,
+    // Form fields for password details
+    password_name: String,
+    saved_password: String,
+    website: String,
+    username: String,
+    notes: String,
 }
 
 // The main entry point of the application
@@ -25,7 +48,6 @@ pub fn main() -> iced::Result {
     iced::application("Saltr", update, view)
         .window_size(Size::new(380.0, 640.0)) // Phone-like aspect ratio
         .resizable(false) // Fixed size for clean design
-        .theme(|_: &PasswordGenerator| Theme::Dark) // Use dark theme
         .run()
 }
 
@@ -33,7 +55,7 @@ pub fn main() -> iced::Result {
 fn update(password_generator: &mut PasswordGenerator, message: Message) {
     match message {
         Message::Copy => {
-            let mut clipboard = Clipboard::new().expect("Failed to create clipboard");
+            let mut clipboard = arboard::Clipboard::new().expect("Failed to create clipboard");
             clipboard.set_text(&password_generator.generated_password)
                 .expect("Failed to set clipboard text");
             println!("Copied to clipboard");
@@ -43,24 +65,54 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
             println!("Reload button has been clicked");
         }
         Message::Save => {
-            // Implement save functionality if needed
+            // Pre-fill the password field with generated password and navigate to AddDetails
+            password_generator.saved_password = password_generator.generated_password.clone();
+            password_generator.current_page = Pages::AddDetails;
             println!("Save button has been clicked");
+        }
+        Message::NavigateTo(page) => {
+            password_generator.current_page = page;
+            println!("Navigated to: {:?}", password_generator.current_page);
+        }
+        // Handle form input changes
+        Message::PasswordNameChanged(value) => {
+            password_generator.password_name = value;
+        }
+        Message::PasswordChanged(value) => {
+            password_generator.saved_password = value;
+        }
+        Message::WebsiteChanged(value) => {
+            password_generator.website = value;
+        }
+        Message::UsernameChanged(value) => {
+            password_generator.username = value;
+        }
+        Message::NotesChanged(value) => {
+            password_generator.notes = value;
+        }
+        Message::SavePasswordDetails => {
+            println!("Saving password details:");
+            println!("Name: {}", password_generator.password_name);
+            println!("Password: {}", password_generator.saved_password);
+            println!("Website: {}", password_generator.website);
+            println!("Username: {}", password_generator.username);
+            println!("Notes: {}", password_generator.notes);
+            
+            // Clear form fields after saving
+            password_generator.password_name.clear();
+            password_generator.saved_password.clear();
+            password_generator.website.clear();
+            password_generator.username.clear();
+            password_generator.notes.clear();
+            
+            // Navigate back to main page
+            password_generator.current_page = Pages::Current;
         }
     }
 }
 
-// Custom dark colors matching the reference
-const DARK_BG: Color = Color::from_rgb(0.08, 0.08, 0.08);
-const CARD_BG: Color = Color::from_rgb(0.12, 0.12, 0.12);
-const ACCENT_COLOR: Color = Color::from_rgb(0.9, 0.7, 0.4);
-const TEXT_PRIMARY: Color = Color::from_rgb(0.95, 0.95, 0.95);
-const TEXT_SECONDARY: Color = Color::from_rgb(0.7, 0.7, 0.7);
-const BUTTON_ACTIVE: Color = Color::from_rgb(0.2, 0.2, 0.2);
-const SAVE_BTN_COLOR: Color = Color::from_rgb(0.0, 255.0, 0.0);
-
-// The view function defines the UI layout and appearance
-fn view(password_generator: &PasswordGenerator) -> Element<Message> {
-    
+// Current page view (your existing password generator)
+fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     let reload_svg = svg::Handle::from_path("assets/reload.svg"); 
     let copy_svg = svg::Handle::from_path("assets/copy.svg");
     
@@ -68,12 +120,7 @@ fn view(password_generator: &PasswordGenerator) -> Element<Message> {
     let header = container(
         column![
             text("A password generator:")
-                .size(20)
-                .style(move |_theme: &Theme| {
-                    text::Style {
-                        color: Some(TEXT_PRIMARY),
-                    }
-                }),
+                .size(20),
         ]
         .spacing(2)
         .align_x(iced::Alignment::Center)
@@ -92,27 +139,7 @@ fn view(password_generator: &PasswordGenerator) -> Element<Message> {
     .on_press(Message::Reload)
     .padding(10)
     .width(40)
-    .height(40)
-    .style(move |_theme: &Theme, status| {
-        button::Style {
-            background: Some(Background::Color(match status {
-                button::Status::Hovered => Color::from_rgb(0.25, 0.25, 0.25),
-                button::Status::Pressed => Color::from_rgb(0.15, 0.15, 0.15),
-                _ => BUTTON_ACTIVE,
-            })),
-            text_color: TEXT_PRIMARY,
-            border: Border {
-                color: Color::from_rgb(0.3, 0.3, 0.3),
-                width: 1.0,
-                radius: 12.0.into(),
-            },
-            shadow: Shadow {
-                color: Color::from_rgba(0.0, 0.0, 0.0, 0.2),
-                offset: Vector::new(0.0, 2.0),
-                blur_radius: 8.0,
-            },
-        }
-    });
+    .height(40);
 
     // Copy button (smaller, icon only)
     let copy_btn = button(
@@ -125,34 +152,13 @@ fn view(password_generator: &PasswordGenerator) -> Element<Message> {
     .on_press(Message::Copy)
     .padding(10)
     .width(40)
-    .height(40)
-    .style(move |_theme: &Theme, status| {
-        button::Style {
-            background: Some(Background::Color(match status {
-                button::Status::Hovered => Color::from_rgb(0.95, 0.75, 0.45),
-                button::Status::Pressed => Color::from_rgb(0.85, 0.65, 0.35),
-                _ => ACCENT_COLOR,
-            })),
-            text_color: DARK_BG,
-            border: Border {
-                color: ACCENT_COLOR,
-                width: 1.0,
-                radius: 12.0.into(),
-            },
-            shadow: Shadow::default(),
-        }
-    });
+    .height(40);
 
     // Password display with buttons on sides
     let password_section = container(
         column![
             text(":)")
-                .size(14)
-                .style(move |_theme: &Theme| {
-                    text::Style {
-                        color: Some(TEXT_SECONDARY),
-                    }
-                }),
+                .size(14),
             
             // Row with reload button, password display, and copy button
             row![
@@ -165,121 +171,208 @@ fn view(password_generator: &PasswordGenerator) -> Element<Message> {
                         &password_generator.generated_password 
                     })
                     .size(18)
-                    .style(move |_theme: &Theme| {
-                        text::Style {
-                            color: Some(TEXT_PRIMARY),
-                        }
-                    })
                 )
                 .padding(20)
-                .width(Fill)
-                .style(move |_theme: &Theme| {
-                    container::Style {
-                        background: Some(Background::Color(DARK_BG)),
-                        border: Border {
-                            color: Color::from_rgb(0.25, 0.25, 0.25),
-                            width: 1.0,
-                            radius: 12.0.into(),
-                        },
-                        text_color: None,
-                        shadow: Shadow::default(),
-                    }
-                }),
+                .width(Fill),
                 Space::with_width(15),
                 copy_btn,
             ]
             .align_y(iced::Alignment::Center),
 
-            // Save button below the row
+            // Save button below the row with improved padding
             button(
                 text("Save")
                     .size(16)
-                    .style(move |_theme: &Theme| {
-                        text::Style {
-                            color: Some(TEXT_PRIMARY),
-                        }
-                    })
             )
-            .style(move |_theme: &Theme, status| {
-                button::Style {
-                    background: Some(Background::Color(match status {
-                        button::Status::Hovered => SAVE_BTN_COLOR,
-                        button::Status::Pressed => Color::from_rgb(0.0, 200.0 / 255.0, 0.0),
-                        _ => SAVE_BTN_COLOR,
-                    })),
-                    text_color: DARK_BG,
-                    border: Border {
-                        color: SAVE_BTN_COLOR,
-                        width: 1.0,
-                        radius: 12.0.into(),
-                    },
-                    shadow: Shadow::default(),
-                }
-            })
             .on_press(Message::Save)
-            .padding(10)
-            .width(80)
-            .style(move |_theme: &Theme, status| {
-                button::Style {
-                    background: Some(Background::Color(match status {
-                        button::Status::Hovered => Color::from_rgb(0.25, 0.25, 0.25),
-                        button::Status::Pressed => Color::from_rgb(0.15, 0.15, 0.15),
-                        _ => BUTTON_ACTIVE,
-                    })),
-                    text_color: TEXT_PRIMARY,
-                    border: Border {
-                        color: Color::from_rgb(0.3, 0.3, 0.3),
-                        width: 1.0,
-                        radius: 12.0.into(),
-                    },
-                    shadow: Shadow::default(),
-                }
-            }),
+            .padding([15, 25]) // Improved padding: [vertical, horizontal]
+            .width(100), // Slightly wider for better proportions
         ]
-        .spacing(0)
+        .spacing(20) // Added spacing between elements
         .align_x(iced::Alignment::Center)
     )
     .padding(25)
-    .width(Fill)
-    .style(move |_theme: &Theme| {
-        container::Style {
-            background: Some(Background::Color(CARD_BG)),
-            border: Border {
-                color: Color::from_rgb(0.2, 0.2, 0.2),
-                width: 1.0,
-                radius: 20.0.into(),
-            },
-            shadow: Shadow {
-                color: Color::from_rgba(0.0, 0.0, 0.0, 0.3),
-                offset: Vector::new(0.0, 4.0),
-                blur_radius: 20.0,
-            },
-            text_color: None,
-        }
-    });
+    .width(Fill);
 
+    // Navigation buttons
+    let navigation = row![
+        button("View Passwords").on_press(Message::NavigateTo(Pages::ViewPasswords)),
+        Space::with_width(10),
+        button("Settings").on_press(Message::NavigateTo(Pages::Settings)),
+    ]
+    .spacing(10);
 
-    
     // Main layout
     let main_content = column![
         header,
         Space::with_height(20),
         password_section,
+        Space::with_height(20),
+        navigation,
         Space::with_height(40),
     ]
     .spacing(0)
     .align_x(iced::Alignment::Center);
 
-    // Outer container with dark background
+    // Outer container
     container(main_content)
         .padding(20)
         .width(Fill)
         .height(Fill)
-        .style(move |_theme: &Theme| {
-            container::Style {
-                background: Some(Background::Color(DARK_BG)),
-                ..Default::default()
-            }
-        })
         .into()
+}
+
+// Add Details page view
+fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> {
+    let content = column![
+        text("Save Password Details")
+            .size(24),
+        Space::with_height(30),
+        
+        // Password Name field
+        column![
+            text("Password Name *")
+                .size(14),
+            text_input("e.g., Gmail Account", &password_generator.password_name)
+                .on_input(Message::PasswordNameChanged)
+                .padding(10)
+                .width(300),
+        ]
+        .spacing(5),
+        
+        Space::with_height(15),
+        
+        // Password field (pre-filled with generated password)
+        column![
+            text("Password *")
+                .size(14),
+            text_input("Your password", &password_generator.saved_password)
+                .on_input(Message::PasswordChanged)
+                .padding(10)
+                .width(300)
+                .secure(true), // Hide password characters
+        ]
+        .spacing(5),
+        
+        Space::with_height(15),
+        
+        // Website/App field
+        column![
+            text("Website/App")
+                .size(14),
+            text_input("e.g., gmail.com", &password_generator.website)
+                .on_input(Message::WebsiteChanged)
+                .padding(10)
+                .width(300),
+        ]
+        .spacing(5),
+        
+        Space::with_height(15),
+        
+        // Username/Email field
+        column![
+            text("Username/Email")
+                .size(14),
+            text_input("e.g., john@example.com", &password_generator.username)
+                .on_input(Message::UsernameChanged)
+                .padding(10)
+                .width(300),
+        ]
+        .spacing(5),
+        
+        Space::with_height(15),
+        
+        // Notes field
+        column![
+            text("Notes")
+                .size(14),
+            text_input("Additional notes (optional)", &password_generator.notes)
+                .on_input(Message::NotesChanged)
+                .padding(10)
+                .width(300),
+        ]
+        .spacing(5),
+        
+        Space::with_height(30),
+        
+        // Action buttons
+        row![
+            button("Cancel")
+                .on_press(Message::NavigateTo(Pages::Current))
+                .padding([10, 20]),
+            Space::with_width(15),
+            button("Save Password")
+                .on_press(Message::SavePasswordDetails)
+                .padding([10, 20]),
+        ]
+        .spacing(10),
+        
+        Space::with_height(20),
+        text("* Required fields")
+            .size(12),
+    ]
+    .spacing(0)
+    .align_x(iced::Alignment::Center);
+
+    container(content)
+        .padding(40)
+        .width(Fill)
+        .height(Fill)
+        .into()
+}
+
+// View Passwords page
+fn view_passwords(_password_generator: &PasswordGenerator) -> Element<Message> {
+    let content = column![
+        text("Saved Passwords")
+            .size(24),
+        Space::with_height(20),
+        text("No passwords saved yet")
+            .size(16),
+        Space::with_height(30),
+        button("Back to Generator")
+            .on_press(Message::NavigateTo(Pages::Current))
+            .padding([10, 20]),
+    ]
+    .spacing(10)
+    .align_x(iced::Alignment::Center);
+
+    container(content)
+        .padding(40)
+        .width(Fill)
+        .height(Fill)
+        .into()
+}
+
+// Settings page
+fn view_settings(_password_generator: &PasswordGenerator) -> Element<Message> {
+    let content = column![
+        text("Settings")
+            .size(24),
+        Space::with_height(20),
+        text("Configure your password generator")
+            .size(16),
+        Space::with_height(30),
+        button("Back to Generator")
+            .on_press(Message::NavigateTo(Pages::Current))
+            .padding([10, 20]),
+    ]
+    .spacing(10)
+    .align_x(iced::Alignment::Center);
+
+    container(content)
+        .padding(40)
+        .width(Fill)
+        .height(Fill)
+        .into()
+}
+
+// Main view function - acts as a router
+fn view(password_generator: &PasswordGenerator) -> Element<Message> {
+    match password_generator.current_page {
+        Pages::Current => view_current(password_generator),
+        Pages::AddDetails => view_add_details(password_generator),
+        Pages::ViewPasswords => view_passwords(password_generator),
+        Pages::Settings => view_settings(password_generator),
+    }
 }
