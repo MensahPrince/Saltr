@@ -3,12 +3,14 @@ mod genr;
 use iced::widget::{button, row, column, container, text, svg, Space};
 use iced::{Element, Fill, Size, Border, Shadow, Vector};
 use iced::{Color, Background, Theme};
+use arboard::Clipboard;
 
 // Define the message enum to represent possible user actions
 #[derive(Debug, Clone)]
 enum Message {
     Copy,
     Reload,
+    Save,
 }
 
 // Define the PasswordGenerator struct to hold the state of the password generator
@@ -31,12 +33,18 @@ pub fn main() -> iced::Result {
 fn update(password_generator: &mut PasswordGenerator, message: Message) {
     match message {
         Message::Copy => {
-            genr::generate_password(&mut password_generator.generated_password, 16);
-            println!("Copy button has been clicked");
+            let mut clipboard = Clipboard::new().expect("Failed to create clipboard");
+            clipboard.set_text(&password_generator.generated_password)
+                .expect("Failed to set clipboard text");
+            println!("Copied to clipboard");
         }
         Message::Reload => {
             genr::generate_password(&mut password_generator.generated_password, 16);
             println!("Reload button has been clicked");
+        }
+        Message::Save => {
+            // Implement save functionality if needed
+            println!("Save button has been clicked");
         }
     }
 }
@@ -48,6 +56,7 @@ const ACCENT_COLOR: Color = Color::from_rgb(0.9, 0.7, 0.4);
 const TEXT_PRIMARY: Color = Color::from_rgb(0.95, 0.95, 0.95);
 const TEXT_SECONDARY: Color = Color::from_rgb(0.7, 0.7, 0.7);
 const BUTTON_ACTIVE: Color = Color::from_rgb(0.2, 0.2, 0.2);
+const SAVE_BTN_COLOR: Color = Color::from_rgb(0.0, 255.0, 0.0);
 
 // The view function defines the UI layout and appearance
 fn view(password_generator: &PasswordGenerator) -> Element<Message> {
@@ -180,6 +189,52 @@ fn view(password_generator: &PasswordGenerator) -> Element<Message> {
                 copy_btn,
             ]
             .align_y(iced::Alignment::Center),
+
+            // Save button below the row
+            button(
+                text("Save")
+                    .size(16)
+                    .style(move |_theme: &Theme| {
+                        text::Style {
+                            color: Some(TEXT_PRIMARY),
+                        }
+                    })
+            )
+            .style(move |_theme: &Theme, status| {
+                button::Style {
+                    background: Some(Background::Color(match status {
+                        button::Status::Hovered => SAVE_BTN_COLOR,
+                        button::Status::Pressed => Color::from_rgb(0.0, 200.0 / 255.0, 0.0),
+                        _ => SAVE_BTN_COLOR,
+                    })),
+                    text_color: DARK_BG,
+                    border: Border {
+                        color: SAVE_BTN_COLOR,
+                        width: 1.0,
+                        radius: 12.0.into(),
+                    },
+                    shadow: Shadow::default(),
+                }
+            })
+            .on_press(Message::Save)
+            .padding(10)
+            .width(80)
+            .style(move |_theme: &Theme, status| {
+                button::Style {
+                    background: Some(Background::Color(match status {
+                        button::Status::Hovered => Color::from_rgb(0.25, 0.25, 0.25),
+                        button::Status::Pressed => Color::from_rgb(0.15, 0.15, 0.15),
+                        _ => BUTTON_ACTIVE,
+                    })),
+                    text_color: TEXT_PRIMARY,
+                    border: Border {
+                        color: Color::from_rgb(0.3, 0.3, 0.3),
+                        width: 1.0,
+                        radius: 12.0.into(),
+                    },
+                    shadow: Shadow::default(),
+                }
+            }),
         ]
         .spacing(0)
         .align_x(iced::Alignment::Center)
@@ -203,6 +258,8 @@ fn view(password_generator: &PasswordGenerator) -> Element<Message> {
         }
     });
 
+
+    
     // Main layout
     let main_content = column![
         header,
