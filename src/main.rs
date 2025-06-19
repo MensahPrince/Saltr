@@ -111,7 +111,12 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
     }
 }
 
-// Current page view (your existing password generator)
+
+
+
+
+
+// Current page view 
 fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     let reload_svg = svg::Handle::from_path("assets/reload.svg"); 
     let copy_svg = svg::Handle::from_path("assets/copy.svg");
@@ -222,6 +227,11 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
         .into()
 }
 
+
+
+
+
+
 // Add Details page view
 fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> {
     let content = column![
@@ -321,6 +331,10 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         .into()
 }
 
+
+
+
+
 // View Passwords page
 fn view_passwords(_password_generator: &PasswordGenerator) -> Element<Message> {
     let content = column![
@@ -344,6 +358,11 @@ fn view_passwords(_password_generator: &PasswordGenerator) -> Element<Message> {
         .into()
 }
 
+
+
+
+
+
 // Settings page
 fn view_settings(_password_generator: &PasswordGenerator) -> Element<Message> {
     let content = column![
@@ -366,6 +385,12 @@ fn view_settings(_password_generator: &PasswordGenerator) -> Element<Message> {
         .height(Fill)
         .into()
 }
+
+
+
+
+
+
 
 // Main view function - acts as a router
 fn view(password_generator: &PasswordGenerator) -> Element<Message> {
