@@ -1,4 +1,5 @@
 mod genr;
+mod st_json;
 
 use iced::widget::{button, row, column, container, text, svg, Space, text_input};
 use iced::{Element, Fill, Size};
