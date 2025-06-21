@@ -103,12 +103,19 @@ pub fn save_password_details_to_json(
 }
 
 // Function to get all saved passwords (useful for the "View Passwords" page)
+// Returns a vector of PasswordDetails
+//Disabled as it is not used in the current implementation
+/*
 pub fn get_all_passwords(file_path: &str) -> Result<Vec<PasswordDetails>, std::io::Error> {
     let database = load_password_database(file_path)?;
     Ok(database.passwords)
-}
+} 
+*/
 
-// Function to delete a password by name
+// Function to delete a password by name 
+// Returns true if the password was deleted, false if it was not found
+//Disabled as it is not used in the current implementation
+/*
 pub fn delete_password(name: &str, file_path: &str) -> Result<bool, std::io::Error> {
     let mut database = load_password_database(file_path)?;
     let initial_len = database.passwords.len();
@@ -121,9 +128,13 @@ pub fn delete_password(name: &str, file_path: &str) -> Result<bool, std::io::Err
     } else {
         Ok(false)
     }
-}
+} */
 
-// Example/test function (you can keep this for testing)
+// This function is a test function to create an example password details and save it to JSON
+//It was created for testing purposes
+// It can be removed or modified as needed
+
+/* 
 pub fn save_example_password_to_json(file_path: &str) -> Result<(), std::io::Error> {
     use crate::genr::generate_password;
     
@@ -139,3 +150,4 @@ pub fn save_example_password_to_json(file_path: &str) -> Result<(), std::io::Err
         file_path,
     )
 }
+*/
