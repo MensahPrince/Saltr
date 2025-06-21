@@ -41,6 +41,8 @@ struct PasswordGenerator {
     website: String,
     username: String,
     notes: String,
+    // Add status message for user feedback
+    status_message: String,
 }
 
 // The main entry point of the application
@@ -69,10 +71,12 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
             // Pre-fill the password field with generated password and navigate to AddDetails
             password_generator.saved_password = password_generator.generated_password.clone();
             password_generator.current_page = Pages::AddDetails;
+            password_generator.status_message.clear(); // Clear any previous status
             println!("Save button has been clicked");
         }
         Message::NavigateTo(page) => {
             password_generator.current_page = page;
+            password_generator.status_message.clear(); // Clear status when navigating
             println!("Navigated to: {:?}", password_generator.current_page);
         }
         // Handle form input changes
@@ -92,6 +96,13 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
             password_generator.notes = value;
         }
         Message::SavePasswordDetails => {
+            // Validate required fields
+            if password_generator.password_name.trim().is_empty() || 
+               password_generator.saved_password.trim().is_empty() {
+                password_generator.status_message = "Please fill in all required fields".to_string();
+                return;
+            }
+
             println!("Saving password details:");
             println!("Name: {}", password_generator.password_name);
             println!("Password: {}", password_generator.saved_password);
@@ -99,23 +110,38 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
             println!("Username: {}", password_generator.username);
             println!("Notes: {}", password_generator.notes);
             
-            // Clear form fields after saving
-            password_generator.password_name.clear();
-            password_generator.saved_password.clear();
-            password_generator.website.clear();
-            password_generator.username.clear();
-            password_generator.notes.clear();
-            
-            // Navigate back to main page
-            password_generator.current_page = Pages::Current;
+            // Save to JSON file
+            let result = st_json::save_password_details_to_json(
+                &password_generator.password_name,
+                &password_generator.saved_password,
+                &password_generator.website,
+                &password_generator.username,
+                &password_generator.notes,
+                "passwords.json"
+            );
+
+            match result {
+                Ok(_) => {
+                    password_generator.status_message = "Password saved successfully!".to_string();
+                    
+                    // Clear form fields after successful save
+                    password_generator.password_name.clear();
+                    password_generator.saved_password.clear();
+                    password_generator.website.clear();
+                    password_generator.username.clear();
+                    password_generator.notes.clear();
+                    
+                    // Navigate back to main page after a brief delay (in real app, you might want to use a timer)
+                    // For now, we'll stay on the form to show the success message
+                    // password_generator.current_page = Pages::Current;
+                }
+                Err(e) => {
+                    password_generator.status_message = format!("Error saving password: {}", e);
+                }
+            }
         }
     }
 }
-
-
-
-
-
 
 // Current page view 
 fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
@@ -228,18 +254,34 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
         .into()
 }
 
-
-
-
-
-
 // Add Details page view
 fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> {
-    let content = column![
+    let mut content_items = vec![
         text("Save Password Details")
-            .size(24),
-        Space::with_height(30),
+            .size(24)
+            .into(),
+        Space::with_height(30).into(),
+    ];
+
+    // Add status message if present
+    if !password_generator.status_message.is_empty() {
+        let status_color = if password_generator.status_message.contains("successfully") {
+            iced::Color::from_rgb(0.0, 0.6, 0.0) // Green for success
+        } else {
+            iced::Color::from_rgb(0.8, 0.0, 0.0) // Red for error
+        };
         
+        content_items.push(
+            text(&password_generator.status_message)
+                .size(14)
+                .color(status_color)
+                .into()
+        );
+        content_items.push(Space::with_height(15).into());
+    }
+
+    // Add form fields
+    content_items.extend(vec![
         // Password Name field
         column![
             text("Password Name *")
@@ -249,9 +291,10 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
                 .padding(10)
                 .width(300),
         ]
-        .spacing(5),
+        .spacing(5)
+        .into(),
         
-        Space::with_height(15),
+        Space::with_height(15).into(),
         
         // Password field (pre-filled with generated password)
         column![
@@ -263,9 +306,10 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
                 .width(300)
                 .secure(true), // Hide password characters
         ]
-        .spacing(5),
+        .spacing(5)
+        .into(),
         
-        Space::with_height(15),
+        Space::with_height(15).into(),
         
         // Website/App field
         column![
@@ -276,9 +320,10 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
                 .padding(10)
                 .width(300),
         ]
-        .spacing(5),
+        .spacing(5)
+        .into(),
         
-        Space::with_height(15),
+        Space::with_height(15).into(),
         
         // Username/Email field
         column![
@@ -289,9 +334,10 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
                 .padding(10)
                 .width(300),
         ]
-        .spacing(5),
+        .spacing(5)
+        .into(),
         
-        Space::with_height(15),
+        Space::with_height(15).into(),
         
         // Notes field
         column![
@@ -302,9 +348,10 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
                 .padding(10)
                 .width(300),
         ]
-        .spacing(5),
+        .spacing(5)
+        .into(),
         
-        Space::with_height(30),
+        Space::with_height(30).into(),
         
         // Action buttons
         row![
@@ -316,14 +363,18 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
                 .on_press(Message::SavePasswordDetails)
                 .padding([10, 20]),
         ]
-        .spacing(10),
+        .spacing(10)
+        .into(),
         
-        Space::with_height(20),
+        Space::with_height(20).into(),
         text("* Required fields")
-            .size(12),
-    ]
-    .spacing(0)
-    .align_x(iced::Alignment::Center);
+            .size(12)
+            .into(),
+    ]);
+
+    let content = column(content_items)
+        .spacing(0)
+        .align_x(iced::Alignment::Center);
 
     container(content)
         .padding(40)
@@ -331,10 +382,6 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         .height(Fill)
         .into()
 }
-
-
-
-
 
 // View Passwords page
 fn view_passwords(_password_generator: &PasswordGenerator) -> Element<Message> {
@@ -359,11 +406,6 @@ fn view_passwords(_password_generator: &PasswordGenerator) -> Element<Message> {
         .into()
 }
 
-
-
-
-
-
 // Settings page
 fn view_settings(_password_generator: &PasswordGenerator) -> Element<Message> {
     let content = column![
@@ -386,12 +428,6 @@ fn view_settings(_password_generator: &PasswordGenerator) -> Element<Message> {
         .height(Fill)
         .into()
 }
-
-
-
-
-
-
 
 // Main view function - acts as a router
 fn view(password_generator: &PasswordGenerator) -> Element<Message> {
