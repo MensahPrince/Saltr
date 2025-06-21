@@ -41,4 +41,4 @@ Dependencies:
    ```
 
 ## Disclaimer:
-During the production of this software, I was a novice to the Iced Framework. 
+During the development of this software, I was a novice to the Iced Framework. 
