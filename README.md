@@ -4,18 +4,19 @@ A simple and elegant password generator and password keeping app built with Rust
 
 ## Features
 
-- **Clean Modern UI**: Dark theme with intuitive design
-- **Password Generation**: Generate secure passwords with a single click
-- **Password Storage**: Keep track of your generated passwords (coming soon)
-- **Cross-Platform**: Built with Rust for maximum compatibility
-- **Lightweight**: Fast and efficient with minimal resource usage
+- **Clean Modern UI**: Intuitive design (Coming Soon)
+- **Password Generation**: Generate secure passwords with a single click ✅
+- **Password Storage**: store your generated passwords. ✅
+- **Password List View**: Provides a list of your stored passwords for Create, Read, Update and Delete Operations (Coming soon)
+- **Cross-Platform**: Built with Rust for maximum compatibility ✅
+- **Lightweight**: Fast and efficient with minimal resource usage ✅
 
 
 ## Installation
 
 ### Prerequisites
 
-- Rust (latest stable version)
+- Rust : rustc 1.85.0
 - Cargo package manager
 
 ### Building from Source
@@ -33,7 +34,11 @@ Dependencies:
    iced = { version = "0.13.1", features = ["svg"] }
    rand = "0.9.1"
    arboard = "3.5.0"
+   serde = { version = "1.0.219", features = ["derive"] }
+   serde_json = "1.0.140"
+   dirs = "6.0.0"
+   chrono = { version = "0.4", features = ["serde"] }
    ```
 
 ## Disclaimer:
-During the production of this software, I was relatively new to the Iced Framework. 
+During the production of this software, I was a novice to the Iced Framework. 
