@@ -31,4 +31,6 @@ pub fn rf_json() {
         println!("Deserialized Entry: Name: {} \n Value: {} \n Website: {} \n Username: {} \n Notes: {} \n Created_At: {}", entry.name, entry.value, entry.website, entry.username, entry.notes, entry.created_at);
 
     }
+
+    
 }
