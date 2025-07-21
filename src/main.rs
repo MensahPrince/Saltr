@@ -1,5 +1,6 @@
 mod genr;
 mod st_json;
+mod viewpasswords;
 
 use iced::widget::{button, row, column, container, text, svg, Space, text_input};
 use iced::{Element, Fill, Size};
@@ -49,7 +50,7 @@ struct PasswordGenerator {
 pub fn main() -> iced::Result {
     // Start the iced application with custom window settings
     iced::application("Saltr", update, view)
-        .window_size(Size::new(380.0, 640.0)) // Phone-like aspect ratio
+        .window_size(Size::new(600.0, 700.0)) // Phone-like aspect ratio
         .resizable(false) // Fixed size for clean design
         .run()
 }
@@ -141,6 +142,9 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
             }
         }
     }
+
+    //Calling a function to test its development process
+    viewpasswords::rf_json();
 }
 
 // Current page view 
@@ -407,7 +411,7 @@ fn view_passwords(_password_generator: &PasswordGenerator) -> Element<Message> {
 }
 
 // Settings page
-fn view_settings(_password_generator: &PasswordGenerator) -> Element<Message> {
+fn view_settings(_password_generator: &PasswordGenerator) -> Element<Message> { 
     let content = column![
         text("Settings")
             .size(24),
