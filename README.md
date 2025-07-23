@@ -7,7 +7,8 @@ A simple and elegant password generator and password keeping app built with Rust
 - **Clean Modern UI**: Intuitive design (Coming Soon)
 - **Password Generation**: Generate secure passwords with a single click ✅
 - **Password Storage**: store your generated passwords. ✅
-- **Password List View**: Provides a list of your stored passwords for Create, Read, Update and Delete Operations (Coming soon)
+- **Password List View**: Provides a list of your stored passwords ✅
+- **CRUD Functionalities**: Extra functionalities such as Create, Read, Update and Delete Operations (Coming soon)
 - **Cross-Platform**: Built with Rust for maximum compatibility ✅
 - **Lightweight**: Fast and efficient with minimal resource usage ✅
 
