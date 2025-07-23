@@ -1,8 +1,10 @@
+// main.rs - Fixed to work with your existing code structure
+
 mod genr;
 mod st_json;
 mod viewpasswords;
 
-use iced::widget::{button, row, column, container, text, svg, Space, text_input};
+use iced::widget::{button, row, column, container, text, svg, Space, text_input, scrollable};
 use iced::{Element, Fill, Size};
 
 // Define the pages enum
@@ -21,7 +23,7 @@ enum Message {
     Copy,
     Reload,
     Save,
-    NavigateTo(Pages), // Add navigation message
+    NavigateTo(Pages),
     // Form input messages
     PasswordNameChanged(String),
     PasswordChanged(String),
@@ -29,12 +31,14 @@ enum Message {
     UsernameChanged(String),
     NotesChanged(String),
     SavePasswordDetails,
+    // New message for loading passwords
+    LoadPasswordsFromFile,
 }
 
 // Define the PasswordGenerator struct to hold the state of the password generator
 #[derive(Default)]
 struct PasswordGenerator {
-    current_page: Pages, // Add current page state
+    current_page: Pages,
     generated_password: String,
     // Form fields for password details
     password_name: String,
@@ -44,14 +48,15 @@ struct PasswordGenerator {
     notes: String,
     // Add status message for user feedback
     status_message: String,
+    // Add field to store loaded passwords - using the existing PasswordDetails from st_json
+    loaded_passwords: Vec<st_json::PasswordDetails>,
 }
 
 // The main entry point of the application
 pub fn main() -> iced::Result {
-    // Start the iced application with custom window settings
     iced::application("Saltr", update, view)
-        .window_size(Size::new(600.0, 700.0)) // Phone-like aspect ratio
-        .resizable(false) // Fixed size for clean design
+        .window_size(Size::new(600.0, 700.0))
+        .resizable(false)
         .run()
 }
 
@@ -69,16 +74,39 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
             println!("Reload button has been clicked");
         }
         Message::Save => {
-            // Pre-fill the password field with generated password and navigate to AddDetails
             password_generator.saved_password = password_generator.generated_password.clone();
             password_generator.current_page = Pages::AddDetails;
-            password_generator.status_message.clear(); // Clear any previous status
+            password_generator.status_message.clear();
             println!("Save button has been clicked");
         }
         Message::NavigateTo(page) => {
+            // Load passwords when navigating to ViewPasswords page
+            if matches!(page, Pages::ViewPasswords) {
+                match viewpasswords::load_passwords_from_json() {
+                    Ok(passwords) => {
+                        password_generator.loaded_passwords = passwords;
+                        password_generator.status_message = format!("Loaded {} passwords", password_generator.loaded_passwords.len());
+                    }
+                    Err(e) => {
+                        password_generator.status_message = format!("Error loading passwords: {}", e);
+                        password_generator.loaded_passwords.clear();
+                    }
+                }
+            }
             password_generator.current_page = page;
-            password_generator.status_message.clear(); // Clear status when navigating
             println!("Navigated to: {:?}", password_generator.current_page);
+        }
+        Message::LoadPasswordsFromFile => {
+            match viewpasswords::load_passwords_from_json() {
+                Ok(passwords) => {
+                    password_generator.loaded_passwords = passwords;
+                    password_generator.status_message = format!("Refreshed: {} passwords loaded", password_generator.loaded_passwords.len());
+                }
+                Err(e) => {
+                    password_generator.status_message = format!("Error loading passwords: {}", e);
+                    password_generator.loaded_passwords.clear();
+                }
+            }
         }
         // Handle form input changes
         Message::PasswordNameChanged(value) => {
@@ -97,7 +125,6 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
             password_generator.notes = value;
         }
         Message::SavePasswordDetails => {
-            // Validate required fields
             if password_generator.password_name.trim().is_empty() || 
                password_generator.saved_password.trim().is_empty() {
                 password_generator.status_message = "Please fill in all required fields".to_string();
@@ -111,7 +138,6 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
             println!("Username: {}", password_generator.username);
             println!("Notes: {}", password_generator.notes);
             
-            // Save to JSON file
             let result = st_json::save_password_details_to_json(
                 &password_generator.password_name,
                 &password_generator.saved_password,
@@ -131,10 +157,6 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
                     password_generator.website.clear();
                     password_generator.username.clear();
                     password_generator.notes.clear();
-                    
-                    // Navigate back to main page after a brief delay (in real app, you might want to use a timer)
-                    // For now, we'll stay on the form to show the success message
-                    // password_generator.current_page = Pages::Current;
                 }
                 Err(e) => {
                     password_generator.status_message = format!("Error saving password: {}", e);
@@ -143,16 +165,15 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
         }
     }
 
-    //Calling a function to test its development process
+    // Still calling the test function for development
     viewpasswords::rf_json();
 }
 
-// Current page view 
+// Current page view (unchanged from your original)
 fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     let reload_svg = svg::Handle::from_path("assets/reload.svg"); 
     let copy_svg = svg::Handle::from_path("assets/copy.svg");
     
-    // Top section with title
     let header = container(
         column![
             text("A password generator:")
@@ -164,7 +185,6 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     .width(Fill)
     .padding(40);
 
-    // Reload button (smaller, icon only)
     let reload_btn = button(
         container(
             svg::Svg::new(reload_svg).width(20).height(20)
@@ -177,7 +197,6 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     .width(40)
     .height(40);
 
-    // Copy button (smaller, icon only)
     let copy_btn = button(
         container(
             svg::Svg::new(copy_svg).width(20).height(20)
@@ -190,13 +209,11 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     .width(40)
     .height(40);
 
-    // Password display with buttons on sides
     let password_section = container(
         column![
             text(":)")
                 .size(14),
             
-            // Row with reload button, password display, and copy button
             row![
                 reload_btn,
                 Space::with_width(15),
@@ -215,22 +232,20 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
             ]
             .align_y(iced::Alignment::Center),
 
-            // Save button below the row with improved padding
             button(
                 text("Save")
                     .size(16)
             )
             .on_press(Message::Save)
-            .padding([15, 25]) // Improved padding: [vertical, horizontal]
-            .width(100), // Slightly wider for better proportions
+            .padding([15, 25])
+            .width(100),
         ]
-        .spacing(20) // Added spacing between elements
+        .spacing(20)
         .align_x(iced::Alignment::Center)
     )
     .padding(25)
     .width(Fill);
 
-    // Navigation buttons
     let navigation = row![
         button("View Passwords").on_press(Message::NavigateTo(Pages::ViewPasswords)),
         Space::with_width(10),
@@ -238,7 +253,6 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     ]
     .spacing(10);
 
-    // Main layout
     let main_content = column![
         header,
         Space::with_height(20),
@@ -250,7 +264,6 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     .spacing(0)
     .align_x(iced::Alignment::Center);
 
-    // Outer container
     container(main_content)
         .padding(20)
         .width(Fill)
@@ -258,7 +271,7 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
         .into()
 }
 
-// Add Details page view
+// Add Details page view (unchanged from your original)
 fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> {
     let mut content_items = vec![
         text("Save Password Details")
@@ -267,12 +280,11 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         Space::with_height(30).into(),
     ];
 
-    // Add status message if present
     if !password_generator.status_message.is_empty() {
         let status_color = if password_generator.status_message.contains("successfully") {
-            iced::Color::from_rgb(0.0, 0.6, 0.0) // Green for success
+            iced::Color::from_rgb(0.0, 0.6, 0.0)
         } else {
-            iced::Color::from_rgb(0.8, 0.0, 0.0) // Red for error
+            iced::Color::from_rgb(0.8, 0.0, 0.0)
         };
         
         content_items.push(
@@ -284,9 +296,7 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         content_items.push(Space::with_height(15).into());
     }
 
-    // Add form fields
     content_items.extend(vec![
-        // Password Name field
         column![
             text("Password Name *")
                 .size(14),
@@ -300,7 +310,6 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         
         Space::with_height(15).into(),
         
-        // Password field (pre-filled with generated password)
         column![
             text("Password *")
                 .size(14),
@@ -308,14 +317,13 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
                 .on_input(Message::PasswordChanged)
                 .padding(10)
                 .width(300)
-                .secure(true), // Hide password characters
+                .secure(true),
         ]
         .spacing(5)
         .into(),
         
         Space::with_height(15).into(),
         
-        // Website/App field
         column![
             text("Website/App")
                 .size(14),
@@ -329,7 +337,6 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         
         Space::with_height(15).into(),
         
-        // Username/Email field
         column![
             text("Username/Email")
                 .size(14),
@@ -343,7 +350,6 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         
         Space::with_height(15).into(),
         
-        // Notes field
         column![
             text("Notes")
                 .size(14),
@@ -357,7 +363,6 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         
         Space::with_height(30).into(),
         
-        // Action buttons
         row![
             button("Cancel")
                 .on_press(Message::NavigateTo(Pages::Current))
@@ -387,21 +392,130 @@ fn view_add_details(password_generator: &PasswordGenerator) -> Element<Message> 
         .into()
 }
 
-// View Passwords page
-fn view_passwords(_password_generator: &PasswordGenerator) -> Element<Message> {
-    let content = column![
+// Enhanced View Passwords page that displays the loaded passwords
+fn view_passwords(password_generator: &PasswordGenerator) -> Element<Message> {
+    let mut content_items = vec![
         text("Saved Passwords")
-            .size(24),
-        Space::with_height(20),
-        text("No passwords saved yet")
-            .size(16),
-        Space::with_height(30),
-        button("Back to Generator")
-            .on_press(Message::NavigateTo(Pages::Current))
-            .padding([10, 20]),
-    ]
-    .spacing(10)
-    .align_x(iced::Alignment::Center);
+            .size(24)
+            .into(),
+        Space::with_height(20).into(),
+    ];
+
+    // Show status message if any
+    if !password_generator.status_message.is_empty() {
+        let status_color = if password_generator.status_message.contains("loaded") || 
+                             password_generator.status_message.contains("Refreshed") {
+            iced::Color::from_rgb(0.0, 0.6, 0.0)
+        } else {
+            iced::Color::from_rgb(0.8, 0.0, 0.0)
+        };
+        
+        content_items.push(
+            text(&password_generator.status_message)
+                .size(14)
+                .color(status_color)
+                .into()
+        );
+        content_items.push(Space::with_height(15).into());
+    }
+
+    // Display passwords if any are loaded
+    if password_generator.loaded_passwords.is_empty() {
+        content_items.extend(vec![
+            text("No passwords found")
+                .size(16)
+                .into(),
+            Space::with_height(10).into(),
+            text("Save some passwords first!")
+                .size(14)
+                .into(),
+        ]);
+    } else {
+        // Create a scrollable list of passwords
+        let password_list: Vec<Element<Message>> = password_generator.loaded_passwords
+            .iter()
+            .map(|password| {
+                container(
+                    column![
+                        // Password name (title)
+                        text(&password.name)
+                            .size(18)
+                            .color(iced::Color::from_rgb(0.2, 0.6, 1.0)),
+                        
+                        Space::with_height(5),
+                        
+                        // Website (if provided)
+                        if !password.website.is_empty() {
+                            text(format!("Website: {}", password.website))
+                                .size(14)
+                        } else {
+                            text("")
+                                .size(14)
+                        },
+                        
+                        // Username (if provided)
+                        if !password.username.is_empty() {
+                            text(format!("Username: {}", password.username))
+                                .size(14)
+                        } else {
+                            text("")
+                                .size(14)
+                        },
+                        
+                        // Notes (if provided)
+                        if !password.notes.is_empty() {
+                            text(format!("Notes: {}", password.notes))
+                                .size(14)
+                        } else {
+                            text("")
+                                .size(14)
+                        },
+                        
+                        // Password (hidden for security)
+                        text(format!("Password: {}", "*".repeat(password.value.len())))
+                            .size(14)
+                            .color(iced::Color::from_rgb(0.6, 0.6, 0.6)),
+                        
+                        // Created date
+                        text(format!("Created: {}", password.created_at))
+                            .size(12)
+                            .color(iced::Color::from_rgb(0.5, 0.5, 0.5)),
+                    ]
+                    .spacing(3)
+                )
+                .padding(15)
+                .width(Fill)
+                .into()
+            })
+            .collect();
+
+        content_items.push(
+            scrollable(
+                column(password_list)
+                    .spacing(10)
+            ).into()
+        );
+    }
+
+    // Navigation buttons
+    content_items.extend(vec![
+        Space::with_height(20).into(),
+        row![
+            button("Back to Generator")
+                .on_press(Message::NavigateTo(Pages::Current))
+                .padding([10, 20]),
+            Space::with_width(15),
+            button("Refresh")
+                .on_press(Message::LoadPasswordsFromFile)
+                .padding([10, 20]),
+        ]
+        .spacing(10)
+        .into(),
+    ]);
+
+    let content = column(content_items)
+        .spacing(0)
+        .align_x(iced::Alignment::Center);
 
     container(content)
         .padding(40)
@@ -410,7 +524,7 @@ fn view_passwords(_password_generator: &PasswordGenerator) -> Element<Message> {
         .into()
 }
 
-// Settings page
+// Settings page (unchanged)
 fn view_settings(_password_generator: &PasswordGenerator) -> Element<Message> { 
     let content = column![
         text("Settings")
