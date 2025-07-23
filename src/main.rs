@@ -55,7 +55,7 @@ struct PasswordGenerator {
 // The main entry point of the application
 pub fn main() -> iced::Result {
     iced::application("Saltr", update, view)
-        .window_size(Size::new(600.0, 700.0))
+        .window_size(Size::new(700.0, 600.0))
         .resizable(false)
         .run()
 }
@@ -493,24 +493,33 @@ fn view_passwords(password_generator: &PasswordGenerator) -> Element<Message> {
             scrollable(
                 column(password_list)
                     .spacing(10)
-            ).into()
+            ).height(300)
+             .width(Fill)
+             .into()
         );
     }
+
+    let reload_svg = svg::Handle::from_path("assets/reload.svg"); 
 
     // Navigation buttons
     content_items.extend(vec![
         Space::with_height(20).into(),
         row![
-            button("Back to Generator")
+            button("<-")
                 .on_press(Message::NavigateTo(Pages::Current))
                 .padding([10, 20]),
             Space::with_width(15),
-            button("Refresh")
+            button(
+                container(
+                    svg::Svg::new(reload_svg).width(20).height(20)
+                )
+            )
                 .on_press(Message::LoadPasswordsFromFile)
                 .padding([10, 20]),
         ]
         .spacing(10)
         .into(),
+        
     ]);
 
     let content = column(content_items)
