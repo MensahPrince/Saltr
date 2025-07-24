@@ -500,12 +500,17 @@ fn view_passwords(password_generator: &PasswordGenerator) -> Element<Message> {
     }
 
     let reload_svg = svg::Handle::from_path("assets/reload.svg"); 
+    let back_svg = svg::Handle::from_path("assets/back.svg");
 
     // Navigation buttons
     content_items.extend(vec![
-        Space::with_height(20).into(),
+        Space::with_height(40).into(),
         row![
-            button("<-")
+            button(
+                container(
+                    svg::Svg::new(back_svg).width(20).height(20)
+                )
+            )
                 .on_press(Message::NavigateTo(Pages::Current))
                 .padding([10, 20]),
             Space::with_width(15),
