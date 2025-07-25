@@ -175,16 +175,6 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     let copy_svg = svg::Handle::from_path("assets/copy.svg");
     let save_svg = svg::Handle::from_path("assets/save.svg"); 
 
-    let header = container(
-        column![
-            text("A password generator:")
-                .size(20),
-        ]
-        .spacing(2)
-        .align_x(iced::Alignment::Center)
-    )
-    .width(Fill)
-    .padding(40);
 
     let reload_btn = button(
         container(
@@ -260,7 +250,6 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     .spacing(10);
 
     let main_content = column![
-        header,
         Space::with_height(20),
         password_section,
         Space::with_height(20),
