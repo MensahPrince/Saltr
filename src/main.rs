@@ -173,7 +173,8 @@ fn update(password_generator: &mut PasswordGenerator, message: Message) {
 fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
     let reload_svg = svg::Handle::from_path("assets/reload.svg"); 
     let copy_svg = svg::Handle::from_path("assets/copy.svg");
-    
+    let save_svg = svg::Handle::from_path("assets/save.svg"); 
+
     let header = container(
         column![
             text("A password generator:")
@@ -231,14 +232,19 @@ fn view_current(password_generator: &PasswordGenerator) -> Element<Message> {
                 copy_btn,
             ]
             .align_y(iced::Alignment::Center),
-
+            
             button(
-                text("Save")
-                    .size(16)
+                container(
+                    row![
+                        svg::Svg::new(save_svg).width(20).height(20),
+                        text("Save").size(16)
+                    ]
+                    .spacing(10)
+                )
             )
             .on_press(Message::Save)
             .padding([15, 25])
-            .width(100),
+            .width(150),
         ]
         .spacing(20)
         .align_x(iced::Alignment::Center)
@@ -500,12 +506,17 @@ fn view_passwords(password_generator: &PasswordGenerator) -> Element<Message> {
     }
 
     let reload_svg = svg::Handle::from_path("assets/reload.svg"); 
+    let back_svg = svg::Handle::from_path("assets/back.svg");
 
     // Navigation buttons
     content_items.extend(vec![
-        Space::with_height(20).into(),
+        Space::with_height(40).into(),
         row![
-            button("<-")
+            button(
+                container(
+                    svg::Svg::new(back_svg).width(20).height(20)
+                )
+            )
                 .on_press(Message::NavigateTo(Pages::Current))
                 .padding([10, 20]),
             Space::with_width(15),
